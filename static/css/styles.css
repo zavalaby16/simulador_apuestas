@@ -172,3 +172,28 @@ h2 {
         width: auto;
     }
 }
+/* Esto solo se aplica cuando la pantalla mide menos de 600px (celulares) */
+@media (max-width: 600px) {
+    /* Ajustamos el contenedor de la barra superior */
+    .header-user-info, .navbar, .top-bar { 
+        display: flex;
+        flex-direction: column; /* Alinea los elementos hacia abajo, no de lado */
+        align-items: center;    /* Los centra en la pantalla */
+        gap: 8px;              /* Espacio óptimo entre el nombre, el saldo y el botón */
+        width: 100%;
+        padding: 10px 0;
+    }
+
+    /* Opcional: Hacer la letra un poco más pequeña para que no sature */
+    .user-name, .user-balance {
+        font-size: 1rem; 
+        text-align: center;
+    }
+
+    /* Hacer el botón de salir más compacto y cómodo para el dedo */
+    .btn-logout, .logout-button {
+        width: 80%; /* Ocupa buena parte del ancho para que sea fácil picarle */
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+}
