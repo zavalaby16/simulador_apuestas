@@ -90,22 +90,24 @@ def on_startup():
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request, db: Session = Depends(get_session)):
     try:
-        # Intentamos leer el usuario guardado en la cookie de sesión
-        user = request.session.get("username")
+        # 1. Recuperamos de la sesión
+        session_user = request.session.get("username")
         
-        show_landing = False
-        if user is None or user.strip() == "" or user == "Invitado":
-            show_landing = True
-            user = "Invitado"
+        # 2. Si no hay sesión válida, mostramos la landing y detenemos la ejecución
+        if not session_user or session_user == "Invitado":
+            return templates.TemplateResponse("index.html", {
+                "request": request, 
+                "show_landing": True, 
+                "user": None
+            })
 
+        # 3. Si hay usuario, procedemos con la carga normal
         db.expire_all()
-
         current_user = db.exec(
-            select(User).where(User.username == user).options(
+            select(User).where(User.username == session_user).options(
                 selectinload(User.bets).selectinload(Bet.match)
             )
         ).first()
-        
         if not current_user:
             current_user = User(username=user, balance=1000.0)
             db.add(current_user)
