@@ -266,8 +266,8 @@
         });
     </script>
 
-    <!-- Usamos versión 4 para obligar la recarga del JS corregido -->
-    <script defer src="{{ url_for('static', path='js/app.js') }}?v=4"></script>
+    <!-- Forzamos la versión 5 para que el navegador limpie cualquier residuo viejo -->
+    <script defer src="{{ url_for('static', path='js/app.js') }}?v=5"></script>
 
 </body>
 </html>

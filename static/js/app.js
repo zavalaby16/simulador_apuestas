@@ -4,9 +4,10 @@
 // Carga las apuestas reales del servidor si existen en la ventana, si no, inicia vacio
 let apuestasActivas = window.userBetsFromServer || [];
 
-// CORRECCIÓN CENTRAL: Reutilizamos 'urlParams' del index sin el prefijo "const" para no romper la consola
-const currentUsername =
-    new URLSearchParams(window.location.search).get('user') || "Invitado";
+// SOLUCIÓN DEFINITIVA: Usamos su propio espacio para leer la URL y no chocar con el index
+const parametrosURL = new URLSearchParams(window.location.search);
+const currentUsername = parametrosURL.get('user') || "Invitado";
+
 // ==========================================
 // Gestión Segura del Botón Salir
 // ==========================================
@@ -26,25 +27,34 @@ const downloadContainer = document.getElementById('download-container');
 const btnDownload = document.getElementById('btn-download');
 
 window.addEventListener('beforeinstallprompt', (e) => {
+    // 1. Evitamos que el navegador salte con su cartel automático por defecto
     e.preventDefault();
+    // 2. Guardamos el evento de forma limpia en la variable global
     deferredPrompt = e;
     
     if (downloadContainer) {
         downloadContainer.style.display = 'flex'; 
-        console.log('PWA lista! Mostrando el banner de descarga.');
+        console.log('📌 PWA lista! Mostrando el banner de descarga de manera controlada.');
     }
 });
 
 if (btnDownload) {
-    btnDownload.addEventListener('click', async () => {
+    btnDownload.addEventListener('click', async (e) => {
+        // 3. Bloqueamos cualquier otra acción que el navegador intente hacer al dar click
+        e.preventDefault();
+
         if (!deferredPrompt) {
-            alert("¡Tu PWA está lista! Puedes instalarla directamente desde el botón de la barra de direcciones de tu navegador.");
+            alert("¡Tu PWA ya está instalada o lista! Si estás en móvil, puedes agregarla directo desde el menú de opciones (tres puntos) de tu navegador.");
             return;
         }
         
+        // 4. Disparamos el prompt guardado de forma única
         deferredPrompt.prompt();
+        
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`El usuario respondio a la instalacion: ${outcome}`);
+        
+        // 5. Destruimos la variable para que no queden hilos sueltos en el celular
         deferredPrompt = null;
         
         if (downloadContainer) {
@@ -52,36 +62,6 @@ if (btnDownload) {
         }
     });
 }
-
-// ==========================================
-// Logica para la pantalla de bienvenida (Landing)
-// ==========================================
-const welcomeScreen = document.getElementById('welcome-screen');
-const btnEnterApp = document.getElementById('btn-enter-app');
-const welcomeInput = document.getElementById('welcome-username');
-
-if (btnEnterApp && welcomeScreen) {
-    btnEnterApp.addEventListener('click', () => {
-        const usernameValue = welcomeInput.value.trim();
-        
-        if (usernameValue === "") {
-            alert("Por favor, ingresa un nombre de apostador para continuar!");
-            return;
-        }
-
-        window.fixedUsername = usernameValue;
-        localStorage.setItem('pwa_username', usernameValue);
-        
-        const userDisplay = document.getElementById('current-user-display');
-        if (userDisplay) {
-            userDisplay.innerText = usernameValue;
-        }
-
-        welcomeScreen.style.display = 'none';
-        window.location.href = `/?user=${usernameValue}`;
-    });
-}
-
 // ==========================================
 // Elementos y Gestión del Modal de Apuestas
 // ==========================================
@@ -378,3 +358,21 @@ if (btnReiniciarTodo) {
         }
     });
 }
+document.addEventListener("DOMContentLoaded", () => {
+    const inputUser = document.getElementById("welcome-username");
+    const btnEnter = document.getElementById("btn-enter-app");
+
+    if (!inputUser || !btnEnter) return;
+
+    btnEnter.addEventListener("click", () => {
+        const username = inputUser.value.trim();
+
+        if (!username) {
+            alert("Escribe un nombre");
+            return;
+        }
+
+        localStorage.setItem("pwa_username", username);
+        window.location.href = `/?user=${encodeURIComponent(username)}`;
+    });
+});
