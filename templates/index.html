@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mundial 2026 - Simulador de Apuestas</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="manifest" href="{{ url_for('static', path='manifest.json') }}">
+</head>
+<body>
+
+    {% if show_landing %}
+    <div
+        id="welcome-screen"
+        style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121214;
+            z-index: 11000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        "
+    >
+        <div style="text-align: center; max-width: 400px; width: 100%;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+            <h1 style="color: #ffffff; font-size: 2rem; font-weight: 800; margin-bottom: 10px; font-family: sans-serif;">
+                MUNDIAL 2026
+            </h1>
+            <p style="color: #00ff88; font-size: 1.1rem; font-weight: 600; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;">
+                Simulador de Apuestas
+            </p>
+
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; backdrop-filter: blur(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                <label style="color: #a0a0aa; display: block; margin-bottom: 15px; font-size: 1.1rem; font-weight: 500;">
+                    ¿Bienvenido apostador, cuál es tu nombre?
+                </label>
+                <input
+                    type="text"
+                    id="welcome-username"
+                    placeholder="Ej. Juan77"
+                    style="width: 100%; padding: 14px; background: #27272a; border: 2px solid #3f3f46; border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='#00ff88'"
+                    onblur="this.style.borderColor='#3f3f46'"
+                >
+                <button
+                    id="btn-enter-app"
+                    style="width: 100%; padding: 14px; background: #00ff88; border: none; border-radius: 8px; color: #000000; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: transform 0.1s, background-color 0.2s; box-shadow: 0 4px 15px rgba(0,255,136,0.3);"
+                    onmouseover="this.style.backgroundColor='#00dd77'"
+                    onmouseout="this.style.backgroundColor='#00ff88'"
+                >
+                    Comenzar a Jugar
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <header
+        class="app-header"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #1e1e24; border-bottom: 1px solid #2d2d35;"
+    >
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button
+                id="btn-toggle-sidebar"
+                aria-label="Abrir apuestas"
+                style="background: #27272a; border: 1px solid #3f3f46; color: #ffffff; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;"
+            >
+                📋 <span>Mis Apuestas</span>
+            </button>
+            <div style="font-size: 1.2rem; font-weight: bold; color: #ffffff;">
+                🏆 Mundial 2026
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span id="current-user-display" style="color:#a0a0aa; font-weight:500;">
+                {{ user.username if user else 'Invitado' }}
+            </span>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span
+                    class="balance"
+                    id="user-balance"
+                    style="color:#00ff88; font-weight:bold; background:rgba(0,255,136,0.1); padding:4px 10px; border-radius:6px; font-size:0.95rem;"
+                >
+                    {{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}
+                </span>
+
+                <button
+                    id="btn-deposit"
+                    style="background: rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); color:#00ff88; font-size:0.85rem; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;"
+                >
+                    + Recargar
+                </button>
+            </div>
+
+            <a
+                href="/"
+                style="color:#ff4a4a; font-size:0.75rem; text-decoration:none; font-weight:bold; background:rgba(255,74,74,0.1); padding:3px 8px; border-radius:4px; border:1px solid rgba(255,74,74,0.15);"
+            >
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <div
+        id="sidebar-bets"
+        style="position: fixed; top: 0; left: -320px; width: 320px; height: 100%; background: #121214; border-right: 1px solid #2d2d35; z-index: 1000; transition: left 0.3s ease; box-shadow: 5px 0 20px rgba(0,0,0,0.5); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;"
+    >
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; margin-top:10px;">
+            <h3 style="color:#ffffff; margin:0;">Apuestas Activas</h3>
+            <button id="btn-close-sidebar" aria-label="Cerrar apuestas" style="background:none; border:none; color:#a0a0aa; font-size:1.2rem; cursor:pointer;">
+                ✖
+            </button>
+        </div>
+        <div id="active-bets-container" style="display:flex; flex-direction:column; gap:15px; overflow-y:auto; flex-grow:1;"></div>
+    </div>
+
+    <main class="app-container" style="padding: 20px; max-width: 800px; margin: 0 auto;">
+        
+        <!-- FORCE VISIBILITY: Banner configurado en flex con diseño adaptado para pruebas locales -->
+        <div id="download-container" class="download-banner" style="display: flex; gap: 15px; align-items: center; justify-content: center; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2); padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+            <p style="margin: 0; color: #ffffff; font-weight: 500;">📱 ¡Instala la aplicación móvil para simular en tiempo real!</p>
+            <button id="btn-download" class="btn-install" style="background: #00ff88; color: #000000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,255,136,0.2);">Descargar App</button>
+        </div>
+
+        <h2 style="color: #ffffff; text-align: left; margin-bottom: 20px;">Partidos Disponibles</h2>
+        
+        <div style="margin-bottom: 25px; text-align: left; display: flex; gap: 12px; align-items: center;">
+            <button 
+                id="btn-simular-todo" 
+                style="background: #00ff88; color: #000000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,255,136,0.2); transition: transform 0.1s, background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#00dd77'; this.style.transform='scale(1.01)';"
+                onmouseout="this.style.backgroundColor='#00ff88'; this.style.transform='scale(1)';"
+            >
+                🎲 Simular Resultados de la Jornada
+            </button>
+
+            <button 
+                id="btn-reiniciar-todo" 
+                style="background: #27272a; color: #ffffff; border: 1px solid #3f3f46; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background-color 0.2s, border-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#3f3f46'; this.style.borderColor='#52525b';"
+                onmouseout="this.style.backgroundColor='#27272a'; this.style.borderColor='#3f3f46';"
+            >
+                🔄 Reiniciar Jornada
+            </button>
+        </div>
+
+        <section class="matches-list">
+            {% if matches %}
+                {% for match in matches %}
+                <div class="match-card" data-match-id="{{ match.id }}" style="{% if match.status == 'FINISHED' %}opacity: 0.85; background: #16161a; border: 1px solid #27272a;{% endif %}">
+                    
+                    <div class="match-teams-header" style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:15px; width:100%;">
+                        <div class="team-info" style="display:flex; align-items:center; gap:8px;">
+                            <img src="{{ match.flag_home }}" alt="Bandera {{ match.team_home }}" style="width:30px; height:20px; object-fit:cover; border-radius:3px;">
+                            <span class="team-name" style="font-size:1.1rem; font-weight:600; color:#ffffff;">{{ match.team_home }}</span>
+                        </div>
+                        
+                        {% if match.status == 'FINISHED' %}
+                            <span class="vs-text" style="font-size:0.8rem; font-weight:bold; color:#a0a0aa; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; text-transform:uppercase;">Finalizado</span>
+                        {% else %}
+                            <span class="vs-text" style="font-size:0.85rem; font-weight:bold; color:#00ff88; background:rgba(0,255,136,0.1); padding:2px 6px; border-radius:4px;">vs</span>
+                        {% endif %}
+
+                        <div class="team-info" style="display:flex; align-items:center; gap:8px;">
+                            <span class="team-name" style="font-size:1.1rem; font-weight:600; color:#ffffff;">{{ match.team_away }}</span>
+                            <img src="{{ match.flag_away }}" alt="Bandera {{ match.team_away }}" style="width:30px; height:20px; object-fit:cover; border-radius:3px;">
+                        </div>
+                    </div>
+
+                    <div class="odds-container" style="display: flex; gap: 12px; width: 100%; justify-content: space-between; margin-top: 10px;">
+                        
+                        <button class="odd-btn" data-pick="HOME" 
+                            style="flex: 1; min-height: 50px; {% if match.status == 'FINISHED' %}cursor: not-allowed; opacity: 0.65; {% if match.result == 'HOME' %}border: 2px solid #00ff88; background: rgba(0,255,136,0.08); color: #00ff88;{% endif %}{% endif %}"
+                            {% if match.status == 'FINISHED' %} disabled {% endif %}>
+                            <span class="label" style="display: block; font-size: 0.8rem;">Local</span>
+                            <span class="value" style="display: block; font-size: 1.05rem; font-weight: bold;">{{ match.odds_home }}</span>
+                        </button>
+                        
+                        <button class="odd-btn" data-pick="DRAW" 
+                            style="flex: 1; min-height: 50px; {% if match.status == 'FINISHED' %}cursor: not-allowed; opacity: 0.65; {% if match.result == 'DRAW' %}border: 2px solid #00ff88; background: rgba(0,255,136,0.08); color: #00ff88;{% endif %}{% endif %}"
+                            {% if match.status == 'FINISHED' %} disabled {% endif %}>
+                            <span class="label" style="display: block; font-size: 0.8rem;">Empate</span>
+                            <span class="value" style="display: block; font-size: 1.05rem; font-weight: bold;">{{ match.odds_draw }}</span>
+                        </button>
+                        
+                        <button class="odd-btn" data-pick="AWAY" 
+                            style="flex: 1; min-height: 50px; {% if match.status == 'FINISHED' %}cursor: not-allowed; opacity: 0.65; {% if match.result == 'AWAY' %}border: 2px solid #00ff88; background: rgba(0,255,136,0.08); color: #00ff88;{% endif %}{% endif %}"
+                            {% if match.status == 'FINISHED' %} disabled {% endif %}>
+                            <span class="label" style="display: block; font-size: 0.8rem;">Visita</span>
+                            <span class="value" style="display: block; font-size: 1.05rem; font-weight: bold;">{{ match.odds_away }}</span>
+                        </button>
+                        
+                    </div>
+                    {% if match.status == 'FINISHED' %}
+                    <div style="margin-top: 12px; text-align: center; background: rgba(0, 255, 136, 0.03); border: 1px solid rgba(0, 255, 136, 0.1); padding: 8px; border-radius: 6px;">
+                        <span style="color: #00ff88; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+                            💸 Resultado Ganador: 
+                            {% if match.result == 'HOME' %}Local{% elif match.result == 'DRAW' %}Empate{% else %}Visita{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {#
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #2d2d35; display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 0.75rem; color: #a0a0aa; text-transform: uppercase; font-weight: bold; text-align: left;">Resolver como (Admin):</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="resolverPartido('{{ match.id }}', 'HOME')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Gana Local</button>
+                            <button onclick="resolverPartido('{{ match.id }}', 'DRAW')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Empate</button>
+                            <button onclick="resolverPartido('{{ match.id }}', 'AWAY')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Gana Visita</button>
+                        </div>
+                    </div>
+                    #}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-matches">No hay partidos disponibles por el momento.</p>
+            {% endif %}
+        </section>
+
+    </main>
+
+    <div id="bet-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; backdrop-filter:blur(5px);">
+        <div style="background:#1e1e24; border:1px solid #2d2d35; width:100%; max-width:360px; padding:25px; border-radius:16px; box-shadow:0 15px 30px rgba(0,0,0,0.5); text-align:center; position:relative;">
+            <button id="close-modal" aria-label="Cerrar modal" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#a0a0aa; font-size:1.2rem; cursor:pointer;">✖</button>
+            <h3 style="color:#ffffff; margin-top:5px; margin-bottom:5px;">Crear Apuesta</h3>
+            <p id="modal-match-teams" style="color:#a0a0aa; margin-bottom:20px;">Partido</p>
+
+            <div style="background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); padding:12px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                <span id="modal-bet-pick" style="color:#ffffff; font-weight:bold;">Predicción</span>
+                <span id="modal-bet-odd" style="color:#00ff88; font-weight:bold;">0.00</span>
+            </div>
+
+            <div style="text-align:left; margin-bottom:20px;">
+                <label style="color:#a0a0aa; font-size:0.85rem; display:block; margin-bottom:8px;">Monto a Apostar ($)</label>
+                <input type="number" id="bet-amount" min="1" step="0.01" inputmode="decimal" placeholder="¿Cuánto vas a jugar?" style="width:100%; padding:12px; background:#27272a; border:2px solid #3f3f46; border-radius:8px; color:#ffffff; font-size:1.1rem; box-sizing:border-box; outline:none;">
+            </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <span style="color:#a0a0aa;">Ganancia Potencial:</span>
+                <span id="predicted-payout" style="color:#ffffff; font-weight:bold; font-size:1.1rem;">$0.00</span>
+            </div>
+            <button id="btn-place-bet" style="width:100%; padding:14px; background:#00ff88; border:none; border-radius:8px; color:#000000; font-size:1.05rem; font-weight:bold; cursor:pointer;">Confirmar Boleto</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Registro del Service Worker (Mantenemos tu ruta actual que ya da 200 OK)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('🚀 PWA: Service Worker activo:', reg.scope))
+                    .catch(err => console.error('❌ PWA: Error:', err));
+            });
+        }
+
+        // 2. Datos del servidor
+        window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
+        window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
+
+        // 3. CAPTURA DEL EVENTO PARA TU BOTÓN VERDE
+        let selectorPrompt = null;
+        
+        // Escuchamos el aviso de instalación de Chrome
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); // Evita que Chrome lo maneje solo
+            selectorPrompt = e;  // Guardamos el evento para tu botón
+            console.log('✅ Evento de instalación guardado listo para el botón verde.');
+        });
+
+        // Hacemos que tu botón verde ejecute la instalación
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnDownload = document.getElementById('btn-download');
+            if (btnDownload) {
+                btnDownload.addEventListener('click', async () => {
+                    if (selectorPrompt) {
+                        // Abre la ventana flotante de instalación en tu interfaz
+                        selectorPrompt.prompt();
+                        const { outcome } = await selectorPrompt.userChoice;
+                        console.log(`El usuario eligió: ${outcome}`);
+                        selectorPrompt = null;
+                    } else {
+                        // Si Chrome bloqueó el evento en localhost, le indicamos dónde dar clic
+                        alert("¡Tu PWA está perfecta! Por seguridad de Chrome en localhost, usa el botón 'Abrir en aplicación' que ya te aparece arriba en la barra de direcciones.");
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+</body>
+</html>

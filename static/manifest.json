@@ -1,0 +1,23 @@
+{
+  "name": "Mundial 2026 - Simulador de Apuestas",
+  "short_name": "Apuestas2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121214",
+  "theme_color": "#1a1a1e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://api.iconify.design/fxemoji:soccerball.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.iconify.design/fxemoji:soccerball.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

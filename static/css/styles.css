@@ -1,0 +1,174 @@
+/* Variables de diseño (Colores tipo app deportiva) */
+:root {
+    --bg-color: #121214;
+    --card-bg: #1a1a1e;
+    --primary: #00ff87; /* Verde vibrante de fútbol */
+    --text-main: #ffffff;
+    --text-muted: #a0a0a5;
+    --border: #29292e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; /* Quita el flash azul raro en celulares */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    padding-bottom: 20px;
+}
+
+/* Encabezado fijo tipo App */
+.app-header {
+    background-color: var(--card-bg);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.username {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.balance {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+/* Contenedor Principal */
+.app-container {
+    max-width: 600px; /* Tamaño ideal para que en PC no se estire horrible */
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2 {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+/* Banner de Descarga PWA */
+.download-banner {
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    text-align: center;
+}
+
+.btn-install {
+    background-color: var(--primary);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* Tarjetas de Partidos (Mobile First) */
+.matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.match-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.teams {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+.vs {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+/* Contenedor de los Momios (Grid de 3 columnas) */
+.odds-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.odd-btn {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.odd-btn:active {
+    transform: scale(0.95); /* Efecto de rebote al tocar en celular */
+}
+
+.odd-btn .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.odd-btn .value {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+/* RESPONSIVE / RESIZE: Si la pantalla es más grande (PC o Tablet) */
+@media (min-width: 768px) {
+    .app-container {
+        max-width: 800px;
+    }
+    
+    .download-banner {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .btn-install {
+        width: auto;
+    }
+}
