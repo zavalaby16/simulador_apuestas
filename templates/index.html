@@ -63,33 +63,20 @@
     {% endif %}
 
     <header class="app-header">
-    <div class="header-left">
-        <button id="btn-toggle-sidebar" aria-label="Abrir apuestas" class="btn-sidebar">
-            📋 <span>Mis Apuestas</span>
-        </button>
-        <div class="header-title">
-            🏆 Mundial 2026
+    <div class="header-row-top">
+        <div class="header-left">
+            <button id="btn-toggle-sidebar" class="btn-sidebar">📋 Mis Apuestas</button>
+            <div class="header-title">🏆 Mundial 2026</div>
         </div>
+        <a href="/logout" class="btn-exit">Salir</a>
     </div>
 
-    <div class="header-right">
-        <span id="current-user-display" class="username-display">
-            {{ user.username if user else 'Invitado' }}
-        </span>
-
+    <div class="header-row-bottom">
+        <span class="username-display">{{ user.username if user else 'Invitado' }}</span>
         <div class="balance-container">
-            <span class="balance" id="user-balance">
-                {{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}
-            </span>
-
-            <button id="btn-deposit" class="btn-add-funds">
-                + Recargar
-            </button>
+            <span class="balance" id="user-balance">{{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}</span>
+            <button id="btn-deposit" class="btn-add-funds">+ Recargar</button>
         </div>
-
-        <a href="/" class="btn-exit">
-            Salir
-        </a>
     </div>
 </header>
     <div

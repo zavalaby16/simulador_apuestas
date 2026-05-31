@@ -228,54 +228,63 @@ h2 {
 }
 
 /* 📱 AJUSTE ADAPTATIVO PARA CELULARES (Menos de 600px) */
+/* 📱 AJUSTE ADAPTATIVO PARA CELULARES (Menos de 600px) */
 @media (max-width: 600px) {
     .app-header {
-        flex-direction: column; /* Apila el bloque izquierdo arriba y el derecho abajo */
+        flex-direction: column;
         gap: 10px;
         padding: 10px;
     }
 
     .header-left {
         width: 100%;
-        justify-content: space-between; /* El botón y el logo se alinean bien arriba */
-        gap: 5px;
-
-        /* Forzamos a que el botón y el título tengan su propio espacio a la mitad en iPhone */
-    .btn-sidebar {
-        width: 48%;
-        justify-content: center; /* Centra el texto y el emoji dentro del botón */
-        white-space: nowrap;     /* Evita que el texto se rompa en dos renglones */
-    }
-
-    .header-title {
-        width: 48%;
-        text-align: right;       /* Empuja el título limpiamente hacia la derecha */
-        font-size: 1rem;         /* Lo hace un poquitito más compacto si el nombre es largo */
-    }
-    }
-
-    .header-title {
-        font-size: 1.05rem; /* Ajusta el tamaño del título del mundial */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .btn-sidebar {
-        padding: 6px 10px;
-        font-size: 0.8rem;
+        width: 45%;
+        padding: 6px 4px !important;
+        font-size: 0.75rem !important;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .header-title {
+        width: 50%;
+        text-align: right;
+        font-size: 0.95rem;
+        font-weight: bold;
     }
 
     .header-right {
         width: 100%;
-        justify-content: space-between; /* Reparte equitativamente usuario, saldo y salir abajo */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         border-top: 1px solid #2d2d35;
         padding-top: 8px;
-        gap: 5px;
     }
 
     .username-display {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
     }
 
     .balance-container {
         gap: 4px;
+    }
+
+    .balance {
+        font-size: 0.85rem;
+        padding: 2px 6px;
+    }
+
+    .btn-add-funds, .btn-exit {
+        font-size: 0.7rem !important;
+        padding: 3px 6px !important;
     }
 }
