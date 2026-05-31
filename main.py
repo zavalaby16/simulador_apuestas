@@ -11,8 +11,17 @@ from database import init_db, get_session
 from models import User, Match, Bet
 from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
+# 1. IMPORTAMOS EL MIDDLEWARE DE SESIONES
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI(title="Simulador de Apuestas Mundial 2026")
+
+# 2. CONFIGURAMOS EL MIDDLEWARE DE SESIONES (Duración de 7 días = 604800 segundos)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="mundial2026-secret-key-super-segura", 
+    max_age=604800
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -40,7 +49,7 @@ class ResolveMatchRequest(BaseModel):
     outcome: str  
 
 
-# 1. Inicialización de datos de prueba
+# Inicialización de datos de prueba
 @app.on_event("startup")
 def on_startup():
     init_db()
@@ -77,17 +86,18 @@ def on_startup():
         session.commit()
 
 
-# 2. Ruta Principal: Muestra el tablero con el saldo del usuario y los partidos
+# 3. RUTA PRINCIPAL OPTIMIZADA CON COOKIES DE SESIÓN
 @app.get("/", response_class=HTMLResponse)
-def read_root(request: Request, user: Optional[str] = None, db: Session = Depends(get_session)):
+def read_root(request: Request, db: Session = Depends(get_session)):
     try:
+        # Intentamos leer el usuario guardado en la cookie de sesión
+        user = request.session.get("username")
+        
         show_landing = False
         if user is None or user.strip() == "" or user == "Invitado":
             show_landing = True
             user = "Invitado"
 
-        # OBLIGAMOS a la base de datos a expirar la memoria caché interna
-        # Esto hace exactamente lo que queríamos: leer los datos frescos del archivo .db
         db.expire_all()
 
         current_user = db.exec(
@@ -101,17 +111,16 @@ def read_root(request: Request, user: Optional[str] = None, db: Session = Depend
             db.add(current_user)
             db.commit()
             db.refresh(current_user)
+            # Guardamos al nuevo usuario también en la sesión
+            request.session["username"] = current_user.username
         
-        # Ahora sí, trae todos los partidos (tanto PENDING como FINISHED)
         matches = db.exec(select(Match)).all()
         
         user_bets_list = []
         if current_user and current_user.bets:
             for bet in current_user.bets:
                 if bet.match:
-                    # 🔍 ESTA LÍNEA DE AUDITORÍA:
                     print(f"DEBUG APUESTA: Partido: {bet.match.team_home}, Estado real en BD: '{bet.status}'")
-
                     user_bets_list.append({
                         "teams": f"{bet.match.team_home} vs {bet.match.team_away}",
                         "pick": "Local" if bet.pick == "HOME" else "Empate" if bet.pick == "DRAW" else "Visita",
@@ -137,18 +146,23 @@ def read_root(request: Request, user: Optional[str] = None, db: Session = Depend
         print(f"❌ ERROR EN READ_ROOT: {e}")
         return HTMLResponse(content=f"<h2>⚠️ Ocurrió un error en el Servidor:</h2><pre>{str(e)}</pre>", status_code=500)    
 
-# 3. Ruta POST: Actualizar nombre desde la Landing
+
+# 4. ACTUALIZAR NOMBRE: Ahora registra al usuario en la Cookie de Sesión de forma segura
 @app.post("/update-username")
-def update_username(data: UsernameUpdate, db: Session = Depends(get_session)):
+def update_username(request: Request, data: UsernameUpdate, db: Session = Depends(get_session)):
     try:
-        user = db.exec(select(User)).first()
-        if user:
-            user.username = data.username
+        # Buscamos si el nuevo nombre ya existe, o creamos/actualizamos el actual
+        user = db.exec(select(User).where(User.username == data.username)).first()
+        if not user:
+            # Si vienes de "Invitado" y pones un nombre nuevo, creamos tu perfil con tus 1000 créditos
+            user = User(username=data.username, balance=1000.0)
             db.add(user)
             db.commit()
             db.refresh(user)
-            return {"status": "success", "new_username": user.username}
-        return JSONResponse(status_code=404, content={"status": "error", "message": "Usuario no encontrado"})
+        
+        # GUARDAMOS EL NOMBRE EN LA COOKIE DEL NAVEGADOR
+        request.session["username"] = user.username
+        return {"status": "success", "new_username": user.username}
     except Exception as e:
         print(f"❌ ERROR EN UPDATE_USERNAME: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
@@ -161,7 +175,6 @@ def place_bet(data: BetCreate, db: Session = Depends(get_session)):
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "Usuario no encontrado"})
             
-        # 🔒 ¡EL CANDADO PARA EVITAR APUESTAS DUPLICADAS! 🔒
         existing_bet = db.exec(
             select(Bet).where(Bet.user_id == user.id, Bet.match_id == data.match_id)
         ).first()
@@ -171,7 +184,6 @@ def place_bet(data: BetCreate, db: Session = Depends(get_session)):
                 status_code=400, 
                 content={"status": "error", "message": "Ya tienes una apuesta registrada para este partido. ¡Elige otro juego!"}
             )
-        # --------------------------------------------------
             
         if data.amount <= 0:
             return JSONResponse(status_code=400, content={"status": "error", "message": "El monto debe ser mayor a 0"})
@@ -215,7 +227,7 @@ def place_bet(data: BetCreate, db: Session = Depends(get_session)):
     except Exception as e:
         print(f"❌ ERROR EN PLACE_BET: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
-# 5. Ruta POST: Depósitos
+
 @app.post("/deposit")
 def make_deposit(request: DepositRequest, db: Session = Depends(get_session)):
     try:
@@ -238,7 +250,6 @@ def make_deposit(request: DepositRequest, db: Session = Depends(get_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# 6. SIMULACIÓN ACTUALIZADA: Cambia estados de partidos y de boletos al mismo tiempo
 @app.post("/simular-jornada")
 def simular_jornada(db: Session = Depends(get_session)):
     try:
@@ -253,7 +264,7 @@ def simular_jornada(db: Session = Depends(get_session)):
         for match in matches:
             outcome = random.choice(opciones)
             match.status = "FINISHED"
-            match.result = outcome  # Guardamos el resultado en el partido ("HOME", "DRAW" o "AWAY")
+            match.result = outcome  
             db.add(match)
             
             texto_resultado = "Local" if outcome == "HOME" else "Empate" if outcome == "DRAW" else "Visita"
@@ -262,16 +273,15 @@ def simular_jornada(db: Session = Depends(get_session)):
                 "resultado": texto_resultado
             })
             
-            # Buscamos todas las apuestas hechas para este partido en concreto
             bets = db.exec(select(Bet).where(Bet.match_id == match.id).options(selectinload(Bet.user))).all()
             for bet in bets:
                 if bet.pick == outcome:
                     ganancia = bet.amount * bet.odd
                     bet.user.balance += ganancia
                     db.add(bet.user)
-                    bet.status = "GANADA"    # Guardamos físicamente en la BD
+                    bet.status = "GANADA"    
                 else:
-                    bet.status = "PERDIDA"   # Guardamos físicamente en la BD
+                    bet.status = "PERDIDA"   
                 db.add(bet)
         
         db.commit()
@@ -291,7 +301,7 @@ def reiniciar_jornada(db: Session = Depends(get_session)):
         matches = db.exec(select(Match)).all()
         for match in matches:
             match.status = "PENDING"
-            match.result = None  # Limpiamos el resultado viejo
+            match.result = None  
             db.add(match)
         
         bets = db.exec(select(Bet)).all()
