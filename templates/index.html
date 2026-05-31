@@ -211,6 +211,7 @@
     </div>
 
     <script>
+
         // 1. ESTRATEGIA DE REDIRECCIÓN AUTOMÁTICA (LOCALSTORAGE)
         const urlParams = new URLSearchParams(window.location.search);
         const userParam = urlParams.get('user');
@@ -223,17 +224,46 @@
         }
 
         // 2. Registro del Service Worker
+
+        // 1. Registro del Service Worker
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('🚀 PWA: Service Worker activo:', reg.scope))
-                    .catch(err => console.error('❌ PWA: Error:', err));
+                    .then(reg => console.log('🚀 PWA: Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('❌ PWA: Error al registrar el Service Worker:', err));
             });
         }
 
         // 3. Datos globales compartidos con tu archivo app.js
         window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
         window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
+
+        // 2. Datos compartidos desde el servidor
+        window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
+        window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
+
+        // 3. CAPTURA DEL EVENTO PARA TU BOTÓN VERDE
+        let selectorPrompt = null;
+
+        // Conectamos tu botón verde directamente al evento de Chrome
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnDownload = document.getElementById('btn-download');
+            if (btnDownload) {
+                btnDownload.addEventListener('click', async () => {
+                    if (selectorPrompt) {
+                        // Despierta la ventana de instalación de Chrome
+                        selectorPrompt.prompt();
+                        const { outcome } = await selectorPrompt.userChoice;
+                        console.log(`El usuario respondió a la instalación: ${outcome}`);
+                        selectorPrompt = null;
+                    } else {
+                        // Si Chrome guardó el evento por seguridad, le avisamos dónde dar clic
+                        alert("¡Tu PWA está lista! Por seguridad de localhost, usa el botón 'Abrir en aplicación' que aparece arriba en tu barra de direcciones.");
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- Usamos versión 4 para obligar la recarga del JS corregido -->
