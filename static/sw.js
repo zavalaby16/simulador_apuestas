@@ -37,17 +37,18 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 🔒 CANDADO ANTICACHÉ PARA EL PANEL DINÁMICO
-    // Si es la raíz, la simulación o las apuestas, vamos DIRECTO al servidor de Python siempre
-    if (url.pathname === '/' || url.pathname.startsWith('/simular') || url.pathname.startsWith('/place-bet')) {
+    // Rutas que NUNCA deben venir de la caché, siempre del servidor Python
+    const dynamicRoutes = ['/', '/place-bet', '/deposit', '/simular-jornada', '/reiniciar-jornada'];
+
+    if (dynamicRoutes.includes(url.pathname)) {
         event.respondWith(
             fetch(event.request)
-                .catch(() => caches.match(event.request)) // Si te quedas offline, muestra lo que haya
+                .catch(() => caches.match(event.request)) 
         );
         return;
     }
 
-    // Para archivos estáticos reales (CSS, JS, iconos), usa la caché para ir rápido
+    // Para todo lo demás (CSS, JS, imágenes), usa caché primero
     event.respondWith(
         caches.match(event.request).then((response) => {
             return response || fetch(event.request);

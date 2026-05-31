@@ -108,6 +108,7 @@ def read_root(request: Request, db: Session = Depends(get_session)):
                 selectinload(User.bets).selectinload(Bet.match)
             )
         ).first()
+
         if not current_user:
             current_user = User(username=user, balance=1000.0)
             db.add(current_user)
@@ -141,7 +142,8 @@ def read_root(request: Request, db: Session = Depends(get_session)):
                 "user": current_user,
                 "matches": matches,
                 "user_bets_json": user_bets_json,
-                "show_landing": show_landing  
+                "show_landing": show_landing,
+                "username_js": current_user.username if current_user else "Invitado"  
             }
         )
     except Exception as e:

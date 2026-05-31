@@ -230,6 +230,12 @@
             });
         }
 
+        <script>
+    // Esta variable la inyecta Jinja2 desde Python
+    window.currentUsername = "{{ username_js }}";
+        </script>
+    <script src="/static/script.js"></script>
+        
         // 2. Datos del servidor
         window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
         window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
