@@ -239,6 +239,19 @@ h2 {
         width: 100%;
         justify-content: space-between; /* El botón y el logo se alinean bien arriba */
         gap: 5px;
+
+        /* Forzamos a que el botón y el título tengan su propio espacio a la mitad en iPhone */
+    .btn-sidebar {
+        width: 48%;
+        justify-content: center; /* Centra el texto y el emoji dentro del botón */
+        white-space: nowrap;     /* Evita que el texto se rompa en dos renglones */
+    }
+
+    .header-title {
+        width: 48%;
+        text-align: right;       /* Empuja el título limpiamente hacia la derecha */
+        font-size: 1rem;         /* Lo hace un poquitito más compacto si el nombre es largo */
+    }
     }
 
     .header-title {
