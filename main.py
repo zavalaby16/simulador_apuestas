@@ -77,7 +77,6 @@ def on_startup():
         session.commit()
 
 
-# 2. RUTA PRINCIPAL: Trae TODOS los partidos (Pendientes y Finalizados)
 # 2. Ruta Principal: Muestra el tablero con el saldo del usuario y los partidos
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request, user: Optional[str] = None, db: Session = Depends(get_session)):
@@ -110,13 +109,16 @@ def read_root(request: Request, user: Optional[str] = None, db: Session = Depend
         if current_user and current_user.bets:
             for bet in current_user.bets:
                 if bet.match:
+                    # 🔍 ESTA LÍNEA DE AUDITORÍA:
+                    print(f"DEBUG APUESTA: Partido: {bet.match.team_home}, Estado real en BD: '{bet.status}'")
+
                     user_bets_list.append({
                         "teams": f"{bet.match.team_home} vs {bet.match.team_away}",
                         "pick": "Local" if bet.pick == "HOME" else "Empate" if bet.pick == "DRAW" else "Visita",
                         "odd": f"{bet.odd:.2f}",
                         "amount": f"{bet.amount:.2f}",
                         "payout": f"${(bet.amount * bet.odd):.2f}",
-                        "status": bet.status  # Estado físico real de la base de datos
+                        "status": bet.status.title()
                     })
                     
         user_bets_json = json.dumps(user_bets_list)
@@ -152,13 +154,24 @@ def update_username(data: UsernameUpdate, db: Session = Depends(get_session)):
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 
-# 4. Ruta POST: Colocar Apuestas
 @app.post("/place-bet")
 def place_bet(data: BetCreate, db: Session = Depends(get_session)):
     try:
         user = db.exec(select(User).where(User.username == data.username)).first()
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "Usuario no encontrado"})
+            
+        # 🔒 ¡EL CANDADO PARA EVITAR APUESTAS DUPLICADAS! 🔒
+        existing_bet = db.exec(
+            select(Bet).where(Bet.user_id == user.id, Bet.match_id == data.match_id)
+        ).first()
+        
+        if existing_bet:
+            return JSONResponse(
+                status_code=400, 
+                content={"status": "error", "message": "Ya tienes una apuesta registrada para este partido. ¡Elige otro juego!"}
+            )
+        # --------------------------------------------------
             
         if data.amount <= 0:
             return JSONResponse(status_code=400, content={"status": "error", "message": "El monto debe ser mayor a 0"})
@@ -202,8 +215,6 @@ def place_bet(data: BetCreate, db: Session = Depends(get_session)):
     except Exception as e:
         print(f"❌ ERROR EN PLACE_BET: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
-    
-
 # 5. Ruta POST: Depósitos
 @app.post("/deposit")
 def make_deposit(request: DepositRequest, db: Session = Depends(get_session)):
