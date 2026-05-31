@@ -1,50 +1,52 @@
 // ==========================================
 // VARIABLES GLOBALES
 // ==========================================
-// Carga las apuestas reales del servidor si existen en la ventana, si no, inicia vacío
+// Carga las apuestas reales del servidor si existen en la ventana, si no, inicia vacio
 let apuestasActivas = window.userBetsFromServer || [];
 
-// Obtener el nombre del usuario actual directamente desde la URL (?user=Nombre)
-const urlParams = new URLSearchParams(window.location.search);
-const currentUsername = urlParams.get('user') || "Invitado";
-
+// CORRECCIÓN CENTRAL: Reutilizamos 'urlParams' del index sin el prefijo "const" para no romper la consola
+const currentUsername =
+    new URLSearchParams(window.location.search).get('user') || "Invitado";
+// ==========================================
+// Gestión Segura del Botón Salir
+// ==========================================
+const btnLogoutCustom = document.getElementById('btn-logout-custom');
+if (btnLogoutCustom) {
+    btnLogoutCustom.addEventListener('click', () => {
+        localStorage.removeItem('pwa_username');
+        window.location.href = '/?user=Invitado';
+    });
+}
 
 // ==========================================
-// Lógica para capturar el evento de instalación (PWA)
+// Logica para capturar el evento de instalacion (PWA)
 // ==========================================
 let deferredPrompt = null;
-
 const downloadContainer = document.getElementById('download-container');
 const btnDownload = document.getElementById('btn-download');
 
-// 1. Escuchamos la señal del navegador
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Evitamos el aviso automático por defecto
     e.preventDefault();
-    // Guardamos el evento
     deferredPrompt = e;
     
-    // ¡Hacemos visible el banner en tu interfaz!
     if (downloadContainer) {
         downloadContainer.style.display = 'flex'; 
-        console.log('¡PWA lista! Mostrando el banner de descarga.');
+        console.log('PWA lista! Mostrando el banner de descarga.');
     }
 });
 
-// 2. Programamos la acción del botón al hacer clic
 if (btnDownload) {
     btnDownload.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
+        if (!deferredPrompt) {
+            alert("¡Tu PWA está lista! Puedes instalarla directamente desde el botón de la barra de direcciones de tu navegador.");
+            return;
+        }
         
-        // Abre la ventana de instalación
         deferredPrompt.prompt();
-        
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`El usuario respondió a la instalación: ${outcome}`);
-        
+        console.log(`El usuario respondio a la instalacion: ${outcome}`);
         deferredPrompt = null;
         
-        // Ocultamos el banner
         if (downloadContainer) {
             downloadContainer.style.display = 'none';
         }
@@ -52,7 +54,7 @@ if (btnDownload) {
 }
 
 // ==========================================
-// 3. Lógica para la pantalla de bienvenida (Landing)
+// Logica para la pantalla de bienvenida (Landing)
 // ==========================================
 const welcomeScreen = document.getElementById('welcome-screen');
 const btnEnterApp = document.getElementById('btn-enter-app');
@@ -63,11 +65,12 @@ if (btnEnterApp && welcomeScreen) {
         const usernameValue = welcomeInput.value.trim();
         
         if (usernameValue === "") {
-            alert("¡Por favor, ingresa un nombre de apostador para continuar!");
+            alert("Por favor, ingresa un nombre de apostador para continuar!");
             return;
         }
 
         window.fixedUsername = usernameValue;
+        localStorage.setItem('pwa_username', usernameValue);
         
         const userDisplay = document.getElementById('current-user-display');
         if (userDisplay) {
@@ -75,11 +78,13 @@ if (btnEnterApp && welcomeScreen) {
         }
 
         welcomeScreen.style.display = 'none';
-        console.log(`¡Bienvenido ${usernameValue}! Entrando sin recargar para no romper la PWA.`);
+        window.location.href = `/?user=${usernameValue}`;
     });
 }
 
-// 4. Elementos del Modal de Apuestas
+// ==========================================
+// Elementos y Gestión del Modal de Apuestas
+// ==========================================
 const betModal = document.getElementById('bet-modal');
 const closeModal = document.getElementById('close-modal');
 const modalMatchTeams = document.getElementById('modal-match-teams');
@@ -93,7 +98,6 @@ let currentMatchId = null;
 let currentPick = null;
 let currentOdd = 0;
 
-// Escuchar clics en los botones de momios verdes
 document.querySelectorAll('.odd-btn').forEach(button => {
     button.addEventListener('click', function() {
         const matchCard = this.closest('.match-card');
@@ -109,7 +113,7 @@ document.querySelectorAll('.odd-btn').forEach(button => {
         if (currentPick === "AWAY") pickText = "Visita";
 
         modalMatchTeams.innerText = `${homeName} vs ${awayName}`;
-        modalBetPick.innerText = `Predicción: ${pickText}`;
+        modalBetPick.innerText = `Prediccion: ${pickText}`;
         modalBetOdd.innerText = currentOdd.toFixed(2);
         betAmountInput.value = ""; 
         predictedPayout.innerText = "$0.00";
@@ -118,7 +122,6 @@ document.querySelectorAll('.odd-btn').forEach(button => {
     });
 });
 
-// Calcular ganancias estimadas automáticamente al escribir
 if (betAmountInput) {
     betAmountInput.addEventListener('input', function() {
         const amount = parseFloat(this.value) || 0;
@@ -127,20 +130,18 @@ if (betAmountInput) {
     });
 }
 
-// Cerrar el modal flotante con la X
 if (closeModal) {
     closeModal.addEventListener('click', () => {
         betModal.style.display = 'none';
     });
 }
 
-// Enviar boleto de apuesta real al Backend
 if (btnPlaceBet) {
     btnPlaceBet.addEventListener('click', async () => {
         const amount = parseFloat(betAmountInput.value) || 0;
         
         if (amount <= 0) {
-            alert("Por favor, ingresa un monto válido mayor a 0.");
+            alert("Por favor, ingresa un monto valido mayor a 0.");
             return;
         }
         
@@ -154,9 +155,7 @@ if (btnPlaceBet) {
         try {
             const response = await fetch('/place-bet', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(betData)
             });
 
@@ -178,7 +177,7 @@ if (btnPlaceBet) {
                     odd: currentOdd.toFixed(2),
                     amount: amount.toFixed(2),
                     payout: document.getElementById('predicted-payout').textContent,
-                    status: "PENDIENTE" // Estado por defecto para renderizado inmediato
+                    status: "PENDIENTE" 
                 };
                 
                 apuestasActivas.push(nuevaApuesta);
@@ -190,17 +189,17 @@ if (btnPlaceBet) {
                 }
 
             } else {
-                alert(`⚠️ No se pudo registrar: ${result.message}`);
+                alert(`Advertencia: No se pudo registrar. ${result.message}`);
             }
         } catch (error) {
             console.error("Error al enviar apuesta:", error);
-            alert("❌ Hubo un problema de conexión con el servidor.");
+            alert("Error: Hubo un problema de conexion con el servidor.");
         }
     });
 }
 
 // ==========================================
-// CONTROLES PARA EL MENÚ LATERAL (SIDEBAR)
+// CONTROLES PARA EL MENU LATERAL (SIDEBAR)
 // ==========================================
 const sidebarBets = document.getElementById('sidebar-bets');
 const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
@@ -219,7 +218,7 @@ if (btnCloseSidebar && sidebarBets) {
 }
 
 // ==========================================
-// RENDER DINÁMICO DE BOLETOS EN EL SIDEBAR (CORREGIDO)
+// RENDER DINAMICO DE BOLETOS EN EL SIDEBAR
 // ==========================================
 function actualizarPanelLateral() {
     const container = document.getElementById('active-bets-container');
@@ -228,21 +227,18 @@ function actualizarPanelLateral() {
     container.innerHTML = '';
     
     if (apuestasActivas.length === 0) {
-        container.innerHTML = `<p style="color: #a0a0aa; text-align: center; font-size: 0.9rem; margin-top: 20px;">No tienes apuestas activas todavía.</p>`;
+        container.innerHTML = `<p style="color: #a0a0aa; text-align: center; font-size: 0.9rem; margin-top: 20px;">No tienes apuestas activas todavia.</p>`;
         return;
     }
     
     apuestasActivas.slice().reverse().forEach(apuesta => {
-        // Obtenemos el estado real del objeto (por si viene en minúsculas del backend)
         const estadoActual = (apuesta.status || 'PENDIENTE').toUpperCase();
         
-        // Estilos por defecto para PENDIENTE
         let badgeTexto = "⏳ Pendiente";
         let colorEstado = "#00ff88";
         let bgEstado = "rgba(0, 255, 136, 0.1)";
         let borderCard = "#00ff88";
 
-        // Cambiar dinámicamente si ya fue resuelta
         if (estadoActual === "GANADA" || estadoActual === "WON" || estadoActual === "SUCCESS") {
             badgeTexto = "✅ Ganada";
             colorEstado = "#00ff88";
@@ -277,91 +273,54 @@ function actualizarPanelLateral() {
 actualizarPanelLateral();
 
 // ========================================================
-// Lógica para Recargar Dinero (+ Recargar)
+// Logica para Recargar Dinero (+ Recargar)
 // ========================================================
 const btnDeposit = document.getElementById('btn-deposit');
 
 if (btnDeposit) {
     btnDeposit.addEventListener('click', async () => {
-        const amountStr = prompt("¿Cuánto dinero deseas recargar a tu cuenta?", "500");
-        
+        const amountStr = prompt("¿Cuanto dinero deseas recargar a tu cuenta?", "500");
         if (amountStr === null) return;
         
         const amount = parseFloat(amountStr);
         if (isNaN(amount) || amount <= 0) {
-            alert("❌ Por favor, ingresa un monto válido y mayor a 0.");
+            alert("Por favor, ingresa un monto valido y mayor a 0.");
             return;
         }
 
         try {
             const response = await fetch('/deposit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: currentUsername,
-                    amount: amount
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUsername, amount: amount })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                alert(`✅ ¡Recarga exitosa! Se han agregado $${amount.toFixed(2)} a tu cuenta.`);
-                
+                alert("✅ ¡Recarga exitosa! Se han agregado $" + amount.toFixed(2) + " a tu cuenta.");
                 const balanceSpan = document.getElementById('user-balance');
                 if (balanceSpan) {
                     balanceSpan.textContent = `$${data.new_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 }
             } else {
-                alert(`⚠️ Error: ${data.detail || 'No se pudo procesar la recarga'}`);
+                alert(`Error: ${data.detail || 'No se pudo procesar la recarga'}`);
             }
         } catch (error) {
             console.error("Error en la recarga:", error);
-            alert("❌ Hubo un problema de conexión con el servidor.");
+            alert("Error: Hubo un problema de conexion con el servidor.");
         }
     });
 }
 
 // ========================================================
-// 5. FUNCIÓN GLOBAL: Resolver Partido (Panel de Admin)
-// ========================================================
-window.resolverPartido = async function(matchId, outcome) {
-    try {
-        const response = await fetch('/resolver-partido', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                match_id: parseInt(matchId),
-                outcome: outcome
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            alert(`⚙️ Backend: ${data.message}`);
-            window.location.reload();
-        } else {
-            alert(`⚠️ Error del administrador: ${data.detail || 'No se pudo procesar la resolución'}`);
-        }
-    } catch (error) {
-        console.error("Error al resolver partido:", error);
-        alert("❌ Hubo un problema al conectar con el endpoint de administración.");
-    }
-};
-
-// ========================================================
-// Lógica para Simular la Jornada Completa
+// Logica para Simular la Jornada Completa
 // ========================================================
 const btnSimularTodo = document.getElementById('btn-simular-todo');
 
 if (btnSimularTodo) {
     btnSimularTodo.addEventListener('click', async () => {
-        if (!confirm("¿Estás listo para simular todos los partidos de la jornada? Esto resolverá tus apuestas activas.")) return;
+        if (!confirm("¿Estas listo para simular todos los partidos de la jornada? Esto resolvera tus apuestas activas.")) return;
 
         try {
             const response = await fetch('/simular-jornada', {
@@ -372,24 +331,27 @@ if (btnSimularTodo) {
             const data = await response.json();
 
             if (response.ok && data.status === "success") {
-                let resumen = "📊 RESUMEN DE LA JORNADA:\n\n";
+                let resumen = "RESUMEN DE LA JORNADA:\n\n";
                 data.resultados.forEach(res => {
-                    resumen += `• ${res.partido} ➔ Ganador: ${res.resultado}\n`;
+                    resumen += `- ${res.partido} -> Ganador: ${res.resultado}\n`;
                 });
                 resumen += "\n¡Los saldos y boletos han sido actualizados!";
                 
                 alert(resumen);
                 window.location.reload();
             } else {
-                alert(`⚠️ No se pudo simular: ${data.message || 'Error desconocido'}`);
+                alert(`No se pudo simular: ${data.message || 'Error desconocido'}`);
             }
         } catch (error) {
             console.error("Error al simular jornada:", error);
-            alert("❌ Hubo un problema al conectar con el simulador.");
+            alert("Error: Hubo un problema al conectar con el simulador.");
         }
     });
 }
 
+// ========================================================
+// Logica para Reiniciar la Jornada
+// ========================================================
 const btnReiniciarTodo = document.getElementById('btn-reiniciar-todo');
 
 if (btnReiniciarTodo) {
@@ -405,14 +367,14 @@ if (btnReiniciarTodo) {
             const data = await response.json();
 
             if (response.ok && data.status === "success") {
-                alert("🔄 ¡Partidos restablecidos! Listos para nuevas apuestas.");
+                alert("¡Partidos restablecidos! Listos para nuevas apuestas.");
                 window.location.reload();
             } else {
-                alert("⚠️ No se pudo reiniciar la jornada.");
+                alert("No se pudo reiniciar la jornada.");
             }
         } catch (error) {
             console.error("Error al reiniciar:", error);
-            alert("❌ Error de conexión.");
+            alert("Error de conexion.");
         }
     });
 }

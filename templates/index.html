@@ -63,22 +63,24 @@
     {% endif %}
 
     <header class="app-header">
-    <div class="header-row-top">
-        <div class="header-left">
-            <button id="btn-toggle-sidebar" class="btn-sidebar">📋 Mis Apuestas</button>
-            <div class="header-title">🏆 Mundial 2026</div>
+        <div class="header-row-top">
+            <div class="header-left">
+                <button id="btn-toggle-sidebar" class="btn-sidebar">📋 Mis Apuestas</button>
+                <div class="header-title">🏆 Mundial 2026</div>
+            </div>
+            <!-- CORRECCIÓN: Botón salir que limpia el localStorage y evita el 404 de la ruta /logout -->
+            <button id="btn-logout-custom" class="btn-exit" style="background: #27272a; border: 1px solid #3f3f46; color: #ff4a4a; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Salir</button>
         </div>
-        <a href="/logout" class="btn-exit">Salir</a>
-    </div>
 
-    <div class="header-row-bottom">
-        <span class="username-display">{{ user.username if user else 'Invitado' }}</span>
-        <div class="balance-container">
-            <span class="balance" id="user-balance">{{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}</span>
-            <button id="btn-deposit" class="btn-add-funds">+ Recargar</button>
+        <div class="header-row-bottom">
+            <span class="username-display">{{ user.username if user else 'Invitado' }}</span>
+            <div class="balance-container">
+                <span class="balance" id="user-balance">{{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}</span>
+                <button id="btn-deposit" class="btn-add-funds">+ Recargar</button>
+            </div>
         </div>
-    </div>
-</header>
+    </header>
+
     <div
         id="sidebar-bets"
         style="position: fixed; top: 0; left: -320px; width: 320px; height: 100%; background: #121214; border-right: 1px solid #2d2d35; z-index: 1000; transition: left 0.3s ease; box-shadow: 5px 0 20px rgba(0,0,0,0.5); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;"
@@ -94,7 +96,6 @@
 
     <main class="app-container" style="padding: 20px; max-width: 800px; margin: 0 auto;">
         
-        <!-- FORCE VISIBILITY: Banner configurado en flex con diseño adaptado para pruebas locales -->
         <div id="download-container" class="download-banner" style="display: flex; gap: 15px; align-items: center; justify-content: center; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2); padding: 15px; border-radius: 12px; margin-bottom: 25px;">
             <p style="margin: 0; color: #ffffff; font-weight: 500;">📱 ¡Instala la aplicación móvil para simular en tiempo real!</p>
             <button id="btn-download" class="btn-install" style="background: #00ff88; color: #000000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,255,136,0.2);">Descargar App</button>
@@ -177,23 +178,12 @@
                         </span>
                     </div>
                     {% endif %}
-                    {#
-                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #2d2d35; display: flex; flex-direction: column; gap: 5px;">
-                        <span style="font-size: 0.75rem; color: #a0a0aa; text-transform: uppercase; font-weight: bold; text-align: left;">Resolver como (Admin):</span>
-                        <div style="display: flex; gap: 5px;">
-                            <button onclick="resolverPartido('{{ match.id }}', 'HOME')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Gana Local</button>
-                            <button onclick="resolverPartido('{{ match.id }}', 'DRAW')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Empate</button>
-                            <button onclick="resolverPartido('{{ match.id }}', 'AWAY')" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #3f3f46; color: #ffffff; font-size: 0.75rem; padding: 4px; border-radius: 4px; cursor: pointer;">Gana Visita</button>
-                        </div>
-                    </div>
-                    #}
                 </div>
                 {% endfor %}
             {% else %}
                 <p class="no-matches">No hay partidos disponibles por el momento.</p>
             {% endif %}
         </section>
-
     </main>
 
     <div id="bet-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; backdrop-filter:blur(5px);">
@@ -212,7 +202,7 @@
                 <input type="number" id="bet-amount" min="1" step="0.01" inputmode="decimal" placeholder="¿Cuánto vas a jugar?" style="width:100%; padding:12px; background:#27272a; border:2px solid #3f3f46; border-radius:8px; color:#ffffff; font-size:1.1rem; box-sizing:border-box; outline:none;">
             </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
                 <span style="color:#a0a0aa;">Ganancia Potencial:</span>
                 <span id="predicted-payout" style="color:#ffffff; font-weight:bold; font-size:1.1rem;">$0.00</span>
             </div>
@@ -221,7 +211,18 @@
     </div>
 
     <script>
-        // 1. Registro del Service Worker (Mantenemos tu ruta actual que ya da 200 OK)
+        // 1. ESTRATEGIA DE REDIRECCIÓN AUTOMÁTICA (LOCALSTORAGE)
+        const urlParams = new URLSearchParams(window.location.search);
+        const userParam = urlParams.get('user');
+
+        if (!userParam || userParam === 'Invitado') {
+            const savedUser = localStorage.getItem('pwa_username');
+            if (savedUser && savedUser !== 'Invitado') {
+                window.location.href = `/?user=${savedUser}`;
+            }
+        }
+
+        // 2. Registro del Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
@@ -230,46 +231,13 @@
             });
         }
 
-        <script>
-    // Esta variable la inyecta Jinja2 desde Python
-    window.currentUsername = "{{ username_js }}";
-        </script>
-    <script src="/static/script.js"></script>
-        
-        // 2. Datos del servidor
+        // 3. Datos globales compartidos con tu archivo app.js
         window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
         window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
-
-        // 3. CAPTURA DEL EVENTO PARA TU BOTÓN VERDE
-        let selectorPrompt = null;
-        
-        // Escuchamos el aviso de instalación de Chrome
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); // Evita que Chrome lo maneje solo
-            selectorPrompt = e;  // Guardamos el evento para tu botón
-            console.log('✅ Evento de instalación guardado listo para el botón verde.');
-        });
-
-        // Hacemos que tu botón verde ejecute la instalación
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnDownload = document.getElementById('btn-download');
-            if (btnDownload) {
-                btnDownload.addEventListener('click', async () => {
-                    if (selectorPrompt) {
-                        // Abre la ventana flotante de instalación en tu interfaz
-                        selectorPrompt.prompt();
-                        const { outcome } = await selectorPrompt.userChoice;
-                        console.log(`El usuario eligió: ${outcome}`);
-                        selectorPrompt = null;
-                    } else {
-                        // Si Chrome bloqueó el evento en localhost, le indicamos dónde dar clic
-                        alert("¡Tu PWA está perfecta! Por seguridad de Chrome en localhost, usa el botón 'Abrir en aplicación' que ya te aparece arriba en la barra de direcciones.");
-                    }
-                });
-            }
-        });
     </script>
 
-    <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+    <!-- Usamos versión 4 para obligar la recarga del JS corregido -->
+    <script defer src="{{ url_for('static', path='js/app.js') }}?v=4"></script>
+
 </body>
 </html>

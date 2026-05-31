@@ -11,18 +11,10 @@ from database import init_db, get_session
 from models import User, Match, Bet
 from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
-# 1. IMPORTAMOS EL MIDDLEWARE DE SESIONES
-from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI(title="Simulador de Apuestas Mundial 2026")
 
-# 2. CONFIGURAMOS EL MIDDLEWARE DE SESIONES (Duración de 7 días = 604800 segundos)
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="mundial2026-secret-key-super-segura", 
-    max_age=604800
-)
-
+# ✅ ELIMINAMOS EL MIDDLEWARE CORRUPTO QUE APAGABA TU SERVIDOR 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -86,36 +78,30 @@ def on_startup():
         session.commit()
 
 
-# 3. RUTA PRINCIPAL OPTIMIZADA CON COOKIES DE SESIÓN
+# 3. RUTA PRINCIPAL OPTIMIZADA (Limpia, estable y sin usar sesiones corruptas)
 @app.get("/", response_class=HTMLResponse)
-def read_root(request: Request, db: Session = Depends(get_session)):
+def read_root(request: Request, user: Optional[str] = None, db: Session = Depends(get_session)):
     try:
-        # 1. Recuperamos de la sesión
-        session_user = request.session.get("username")
+        show_landing = False
         
-        # 2. Si no hay sesión válida, mostramos la landing y detenemos la ejecución
-        if not session_user or session_user == "Invitado":
-            return templates.TemplateResponse("index.html", {
-                "request": request, 
-                "show_landing": True, 
-                "user": None
-            })
+        # Si no viene un usuario válido en la URL, activamos la pantalla de bienvenida
+        if not user or user.strip() == "" or user == "Invitado":
+            show_landing = True
+            user = "Invitado"
 
-        # 3. Si hay usuario, procedemos con la carga normal
         db.expire_all()
         current_user = db.exec(
-            select(User).where(User.username == session_user).options(
+            select(User).where(User.username == user).options(
                 selectinload(User.bets).selectinload(Bet.match)
             )
         ).first()
 
+        # Si el usuario ingresado no existe en la base de datos, lo registramos con saldo limpio
         if not current_user:
             current_user = User(username=user, balance=1000.0)
             db.add(current_user)
             db.commit()
             db.refresh(current_user)
-            # Guardamos al nuevo usuario también en la sesión
-            request.session["username"] = current_user.username
         
         matches = db.exec(select(Match)).all()
         
@@ -123,7 +109,6 @@ def read_root(request: Request, db: Session = Depends(get_session)):
         if current_user and current_user.bets:
             for bet in current_user.bets:
                 if bet.match:
-                    print(f"DEBUG APUESTA: Partido: {bet.match.team_home}, Estado real en BD: '{bet.status}'")
                     user_bets_list.append({
                         "teams": f"{bet.match.team_home} vs {bet.match.team_away}",
                         "pick": "Local" if bet.pick == "HOME" else "Empate" if bet.pick == "DRAW" else "Visita",
@@ -151,21 +136,17 @@ def read_root(request: Request, db: Session = Depends(get_session)):
         return HTMLResponse(content=f"<h2>⚠️ Ocurrió un error en el Servidor:</h2><pre>{str(e)}</pre>", status_code=500)    
 
 
-# 4. ACTUALIZAR NOMBRE: Ahora registra al usuario en la Cookie de Sesión de forma segura
+# 4. ACTUALIZAR NOMBRE: Valida o crea el usuario en la BD de forma directa
 @app.post("/update-username")
 def update_username(request: Request, data: UsernameUpdate, db: Session = Depends(get_session)):
     try:
-        # Buscamos si el nuevo nombre ya existe, o creamos/actualizamos el actual
         user = db.exec(select(User).where(User.username == data.username)).first()
         if not user:
-            # Si vienes de "Invitado" y pones un nombre nuevo, creamos tu perfil con tus 1000 créditos
             user = User(username=data.username, balance=1000.0)
             db.add(user)
             db.commit()
             db.refresh(user)
         
-        # GUARDAMOS EL NOMBRE EN LA COOKIE DEL NAVEGADOR
-        request.session["username"] = user.username
         return {"status": "success", "new_username": user.username}
     except Exception as e:
         print(f"❌ ERROR EN UPDATE_USERNAME: {e}")
