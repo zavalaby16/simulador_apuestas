@@ -172,28 +172,66 @@ h2 {
         width: auto;
     }
 }
-/* Esto solo se aplica cuando la pantalla mide menos de 600px (celulares) */
+/* Corrección real para el encabezado en celulares */
 @media (max-width: 600px) {
-    /* Ajustamos el contenedor de la barra superior */
-    .header-user-info, .navbar, .top-bar { 
+    /* 1. El encabezado se divide en filas ordenadas */
+    .app-header {
         display: flex;
-        flex-direction: column; /* Alinea los elementos hacia abajo, no de lado */
-        align-items: center;    /* Los centra en la pantalla */
-        gap: 8px;              /* Espacio óptimo entre el nombre, el saldo y el botón */
-        width: 100%;
-        padding: 10px 0;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        align-items: center;
     }
 
-    /* Opcional: Hacer la letra un poco más pequeña para que no sature */
-    .user-name, .user-balance {
-        font-size: 1rem; 
+    /* 2. Fila Superior: Logo centrado y botón Salir a la derecha */
+    .logo {
+        font-size: 1.1rem;
         text-align: center;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        position: relative;
     }
 
-    /* Hacer el botón de salir más compacto y cómodo para el dedo */
-    .btn-logout, .logout-button {
-        width: 80%; /* Ocupa buena parte del ancho para que sea fácil picarle */
+    /* Forzamos a que el botón Salir (o cualquier enlace de salida) se acomode bien */
+    .app-header a[href*="logout"], 
+    .app-header button:contains("Salir"),
+    /* Nota: Si tu botón 'Salir' tiene una clase específica como .btn-salir, agrégala aquí */
+    button { 
+        /* Si notas que el botón salir sigue movido, le asignaremos posición limpia abajo */
+    }
+
+    /* 3. Contenedor de Usuario e Información: ¡Los hacemos un bloque ordenado! */
+    .user-info {
+        display: flex;
+        flex-wrap: wrap; /* Si no caben, se bajan solitos sin desbordar */
+        flex-direction: row !important; /* Forzamos alineación horizontal */
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        background-color: var(--bg-color); /* Un fondo sutil para separar la sección */
         padding: 8px;
-        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    /* Ajustamos los textos internos para que no choquen */
+    .username {
+        font-size: 0.85rem;
+    }
+
+    .balance {
+        font-size: 1rem;
+        background-color: rgba(0, 255, 135, 0.1); /* Fondo verde tenue para el dinero */
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    /* 4. Los botones extra (Mis Apuestas, Recargar, Salir) */
+    /* Para que no peleen espacio, haremos que los botones secundarios se adapten */
+    .app-header button, 
+    .app-header .btn,
+    .app-header div {
+        font-size: 0.85rem; /* Letra ligeramente más pequeña para celulares */
     }
 }
