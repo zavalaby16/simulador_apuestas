@@ -226,8 +226,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('🚀 PWA: Service Worker activo:', reg.scope))
-                    .catch(err => console.error('❌ PWA: Error:', err));
+                    .then(reg => console.log('🚀 PWA: Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('❌ PWA: Error al registrar el Service Worker:', err));
             });
         }
 
@@ -236,8 +236,8 @@
         window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
     </script>
 
-    <!-- Usamos versión 4 para obligar la recarga del JS corregido -->
-    <script defer src="{{ url_for('static', path='js/app.js') }}?v=4"></script>
+    <!-- Forzamos la versión 5 para que el navegador limpie cualquier residuo viejo -->
+    <script defer src="{{ url_for('static', path='js/app.js') }}?v=5"></script>
 
 </body>
 </html>
