@@ -252,43 +252,42 @@
     </div>
 
     <script>
-        // 1. Registro del Service Worker (Mantenemos tu ruta actual que ya da 200 OK)
+        // 1. Registro del Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('🚀 PWA: Service Worker activo:', reg.scope))
-                    .catch(err => console.error('❌ PWA: Error:', err));
+                    .then(reg => console.log('🚀 PWA: Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('❌ PWA: Error al registrar el Service Worker:', err));
             });
         }
 
-        // 2. Datos del servidor
+        // 2. Datos compartidos desde el servidor
         window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
         window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
 
         // 3. CAPTURA DEL EVENTO PARA TU BOTÓN VERDE
         let selectorPrompt = null;
         
-        // Escuchamos el aviso de instalación de Chrome
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); // Evita que Chrome lo maneje solo
-            selectorPrompt = e;  // Guardamos el evento para tu botón
-            console.log('✅ Evento de instalación guardado listo para el botón verde.');
+            // Guardamos el evento nativo en nuestra variable global
+            selectorPrompt = e;
+            console.log('✅ Evento de instalación capturado con éxito en el HTML.');
         });
 
-        // Hacemos que tu botón verde ejecute la instalación
+        // Conectamos tu botón verde directamente al evento de Chrome
         document.addEventListener('DOMContentLoaded', () => {
             const btnDownload = document.getElementById('btn-download');
             if (btnDownload) {
                 btnDownload.addEventListener('click', async () => {
                     if (selectorPrompt) {
-                        // Abre la ventana flotante de instalación en tu interfaz
+                        // Despierta la ventana de instalación de Chrome
                         selectorPrompt.prompt();
                         const { outcome } = await selectorPrompt.userChoice;
-                        console.log(`El usuario eligió: ${outcome}`);
+                        console.log(`El usuario respondió a la instalación: ${outcome}`);
                         selectorPrompt = null;
                     } else {
-                        // Si Chrome bloqueó el evento en localhost, le indicamos dónde dar clic
-                        alert("¡Tu PWA está perfecta! Por seguridad de Chrome en localhost, usa el botón 'Abrir en aplicación' que ya te aparece arriba en la barra de direcciones.");
+                        // Si Chrome guardó el evento por seguridad, le avisamos dónde dar clic
+                        alert("¡Tu PWA está lista! Por seguridad de localhost, usa el botón 'Abrir en aplicación' que aparece arriba en tu barra de direcciones.");
                     }
                 });
             }
