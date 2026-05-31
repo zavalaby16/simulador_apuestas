@@ -28,49 +28,84 @@ body {
    2. ENCABEZADO ESCRITORIO (Diseño por defecto)
    ========================================================================== */
 .app-header {
-    background-color: var(--card-bg);
-    padding: 15px 20px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border);
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #1e1e24;
+    border-bottom: 1px solid #2d2d35;
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
-.logo {
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-.user-info {
+.header-left, .header-right {
     display: flex;
-    flex-direction: row;
     align-items: center;
     gap: 15px;
 }
 
-.username {
-    font-size: 0.85rem;
-    color: var(--text-muted);
+.balance-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Estilos de botones y elementos individuales del header */
+.btn-sidebar {
+    background: #27272a; 
+    border: 1px solid #3f3f46; 
+    color: #ffffff; 
+    padding: 8px 12px; 
+    border-radius: 6px; 
+    font-weight: 600; 
+    font-size: 0.9rem; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 6px;
+}
+
+.header-title {
+    font-size: 1.2rem; 
+    font-weight: bold; 
+    color: #ffffff;
+}
+
+.username-display {
+    color: #a0a0aa; 
+    font-weight: 500;
 }
 
 .balance {
-    font-size: 1.1rem;
-    font-weight: bold;
+    font-size: 0.95rem;
+    font-weight: bold; 
     color: var(--primary);
+    background: rgba(0, 255, 136, 0.1); 
+    padding: 4px 10px; 
+    border-radius: 6px; 
 }
 
-/* Estilos base para los botones del header */
-.app-header button, 
-.app-header a, 
-.app-header .btn {
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
+.btn-add-funds {
+    background: rgba(0, 255, 136, 0.05); 
+    border: 1px solid rgba(0, 255, 136, 0.2); 
+    color: #00ff88; 
+    font-size: 0.85rem; 
+    padding: 4px 8px; 
+    border-radius: 4px; 
+    font-weight: bold; 
     cursor: pointer;
-    text-decoration: none;
+}
+
+.btn-exit {
+    color: #ff4a4a; 
+    font-size: 0.75rem; 
+    text-decoration: none; 
+    font-weight: bold; 
+    background: rgba(255, 74, 74, 0.1); 
+    padding: 3px 8px; 
+    border-radius: 4px; 
+    border: 1px solid rgba(255, 74, 74, 0.15);
 }
 
 /* ==========================================================================
@@ -192,54 +227,42 @@ h2 {
     }
 }
 
-/* AJUSTE DEFINITIVO PARA CELULARES (Menos de 600px) */
+/* 📱 AJUSTE ADAPTATIVO PARA CELULARES (Menos de 600px) */
 @media (max-width: 600px) {
     .app-header {
-        display: grid;
-        /* Creamos dos filas: arriba los botones de control, abajo los datos de usuario */
-        grid-template-columns: 1fr; 
-        gap: 12px;
+        flex-direction: column; /* Apila el bloque izquierdo arriba y el derecho abajo */
+        gap: 10px;
         padding: 10px;
     }
 
-    /* La parte superior donde se junta el logo y los botones */
-    .logo {
-        font-size: 1.1rem;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
+    .header-left {
         width: 100%;
+        justify-content: space-between; /* El botón y el logo se alinean bien arriba */
+        gap: 5px;
     }
 
-    /* Forzamos a que el contenedor de saldo e info se mueva abajo ocupando todo el ancho */
-    .user-info {
-        display: flex;
-        flex-direction: row !important;
-        justify-content: space-around;
-        align-items: center;
-        width: 100%;
-        background-color: var(--bg-color);
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
+    .header-title {
+        font-size: 1.05rem; /* Ajusta el tamaño del título del mundial */
     }
 
-    .username {
+    .btn-sidebar {
+        padding: 6px 10px;
         font-size: 0.8rem;
     }
 
-    .balance {
-        font-size: 0.95rem;
+    .header-right {
+        width: 100%;
+        justify-content: space-between; /* Reparte equitativamente usuario, saldo y salir abajo */
+        border-top: 1px solid #2d2d35;
+        padding-top: 8px;
+        gap: 5px;
     }
 
-    /* Reducimos un poco el tamaño de todos los botones dentro del header en celular */
-    .app-header button, 
-    .app-header a, 
-    .app-header .btn {
-        padding: 5px 8px !important;
-        font-size: 0.8rem !important;
+    .username-display {
+        font-size: 0.8rem;
+    }
+
+    .balance-container {
+        gap: 4px;
     }
 }

@@ -62,54 +62,36 @@
     </div>
     {% endif %}
 
-    <header
-        class="app-header"
-        style="display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #1e1e24; border-bottom: 1px solid #2d2d35;"
-    >
-        <div style="display:flex; align-items:center; gap:15px;">
-            <button
-                id="btn-toggle-sidebar"
-                aria-label="Abrir apuestas"
-                style="background: #27272a; border: 1px solid #3f3f46; color: #ffffff; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;"
-            >
-                📋 <span>Mis Apuestas</span>
-            </button>
-            <div style="font-size: 1.2rem; font-weight: bold; color: #ffffff;">
-                🏆 Mundial 2026
-            </div>
+    <header class="app-header">
+    <div class="header-left">
+        <button id="btn-toggle-sidebar" aria-label="Abrir apuestas" class="btn-sidebar">
+            📋 <span>Mis Apuestas</span>
+        </button>
+        <div class="header-title">
+            🏆 Mundial 2026
         </div>
+    </div>
 
-        <div style="display:flex; align-items:center; gap:15px;">
-            <span id="current-user-display" style="color:#a0a0aa; font-weight:500;">
-                {{ user.username if user else 'Invitado' }}
+    <div class="header-right">
+        <span id="current-user-display" class="username-display">
+            {{ user.username if user else 'Invitado' }}
+        </span>
+
+        <div class="balance-container">
+            <span class="balance" id="user-balance">
+                {{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}
             </span>
 
-            <div style="display:flex; align-items:center; gap:8px;">
-                <span
-                    class="balance"
-                    id="user-balance"
-                    style="color:#00ff88; font-weight:bold; background:rgba(0,255,136,0.1); padding:4px 10px; border-radius:6px; font-size:0.95rem;"
-                >
-                    {{ "${:,.2f}".format(user.balance) if user else "$1,000.00" }}
-                </span>
-
-                <button
-                    id="btn-deposit"
-                    style="background: rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); color:#00ff88; font-size:0.85rem; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;"
-                >
-                    + Recargar
-                </button>
-            </div>
-
-            <a
-                href="/"
-                style="color:#ff4a4a; font-size:0.75rem; text-decoration:none; font-weight:bold; background:rgba(255,74,74,0.1); padding:3px 8px; border-radius:4px; border:1px solid rgba(255,74,74,0.15);"
-            >
-                Salir
-            </a>
+            <button id="btn-deposit" class="btn-add-funds">
+                + Recargar
+            </button>
         </div>
-    </header>
 
+        <a href="/" class="btn-exit">
+            Salir
+        </a>
+    </div>
+</header>
     <div
         id="sidebar-bets"
         style="position: fixed; top: 0; left: -320px; width: 320px; height: 100%; background: #121214; border-right: 1px solid #2d2d35; z-index: 1000; transition: left 0.3s ease; box-shadow: 5px 0 20px rgba(0,0,0,0.5); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;"
