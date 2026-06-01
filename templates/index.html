@@ -211,7 +211,7 @@
     </div>
 
     <script>
-    // 1. CONTROL DE SESIÓN INTELIGENTE (SIN REDIRECCIONES DE URL)
+    // 1. CONTROL DE SESIÓN INTELIGENTE (CORREGIDO PARA PANTALLA NEGRA)
     document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
         let userParam = urlParams.get('user');
@@ -224,15 +224,18 @@
             userParam = savedUser;
         }
 
-        // Si hay un usuario válido, ocultamos la landing en vivo
-        if (userParam && userParam !== 'Invitado') {
-            const landingScreen = document.getElementById("welcome-username") ? document.getElementById("welcome-username").closest('div').parentElement : null;
-            const mainAppContent = document.getElementById("main-app") || document.querySelector(".app-container") || document.querySelector("main");
-            const welcomeText = document.getElementById("user-display-name") || document.querySelector(".navbar .username");
+        // Apuntamos DIRECTAMENTE a la pantalla negra gigante
+        const welcomeScreen = document.getElementById("welcome-screen");
 
-            if (landingScreen) landingScreen.style.display = "none";
-            if (mainAppContent) mainAppContent.style.display = "block";
-            if (welcomeText) welcomeText.textContent = userParam;
+        if (userParam && userParam !== 'Invitado') {
+            // Si ya hay usuario, eliminamos la pantalla negra por completo para ver el juego
+            if (welcomeScreen) {
+                welcomeScreen.style.setProperty("display", "none", "important");
+            }
+            
+            // Actualizamos tu barra de navegación con el nombre real
+            const usernameDisplays = document.querySelectorAll(".username-display");
+            usernameDisplays.forEach(el => el.textContent = userParam);
             
             window.fixedUsername = userParam;
         } else {
@@ -256,9 +259,7 @@
     let selectorPrompt = null;
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Evitamos que Android muestre su banner nativo genérico
         e.preventDefault();
-        // Guardamos el evento para cuando el usuario use tu botón verde
         selectorPrompt = e;
     });
 
