@@ -211,61 +211,73 @@
     </div>
 
     <script>
-
-        // 1. ESTRATEGIA DE REDIRECCIÓN AUTOMÁTICA (LOCALSTORAGE)
+    // 1. CONTROL DE SESIÓN INTELIGENTE (SIN REDIRECCIONES DE URL)
+    document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const userParam = urlParams.get('user');
+        let userParam = urlParams.get('user');
+        const savedUser = localStorage.getItem('pwa_username');
 
-        if (!userParam || userParam === 'Invitado') {
-            const savedUser = localStorage.getItem('pwa_username');
-            if (savedUser && savedUser !== 'Invitado') {
-                window.location.href = `/?user=${savedUser}`;
-            }
+        // Sincronizamos las fuentes de usuario
+        if (userParam && userParam !== 'Invitado') {
+            localStorage.setItem('pwa_username', userParam);
+        } else if (savedUser && savedUser !== 'Invitado') {
+            userParam = savedUser;
         }
 
-        // 2. Registro del Service Worker
+        // Si hay un usuario válido, ocultamos la landing en vivo
+        if (userParam && userParam !== 'Invitado') {
+            const landingScreen = document.getElementById("welcome-username") ? document.getElementById("welcome-username").closest('div').parentElement : null;
+            const mainAppContent = document.getElementById("main-app") || document.querySelector(".app-container") || document.querySelector("main");
+            const welcomeText = document.getElementById("user-display-name") || document.querySelector(".navbar .username");
 
-        // 1. Registro del Service Worker
+            if (landingScreen) landingScreen.style.display = "none";
+            if (mainAppContent) mainAppContent.style.display = "block";
+            if (welcomeText) welcomeText.textContent = userParam;
+            
+            window.fixedUsername = userParam;
+        } else {
+            window.fixedUsername = "Invitado";
+        }
+    });
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('🚀 PWA: Service Worker registrado con éxito:', reg.scope))
-                    .catch(err => console.error('❌ PWA: Error al registrar el Service Worker:', err));
+    // 2. REGISTRO DEL SERVICE WORKER
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('🚀 PWA: Service Worker registrado con éxito:', reg.scope))
+                .catch(err => console.error('❌ PWA: Error al registrar el Service Worker:', err));
+        });
+    }
+
+    // 3. DATOS COMPARTIDOS DESDE EL SERVIDOR (Backend Jinja2)
+    window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
+
+    // 4. CAPTURA DEL EVENTO DE INSTALACIÓN (Botón Verde)
+    let selectorPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Evitamos que Android muestre su banner nativo genérico
+        e.preventDefault();
+        // Guardamos el evento para cuando el usuario use tu botón verde
+        selectorPrompt = e;
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnDownload = document.getElementById('btn-download');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', async () => {
+                if (selectorPrompt) {
+                    selectorPrompt.prompt();
+                    const { outcome } = await selectorPrompt.userChoice;
+                    console.log(`El usuario respondió a la instalación: ${outcome}`);
+                    selectorPrompt = null;
+                } else {
+                    alert("¡Tu PWA ya está lista o instalada! Si estás en móvil, puedes agregarla directo desde el menú de opciones (tres puntos o compartir) de tu navegador.");
+                }
             });
         }
-
-        // 3. Datos globales compartidos con tu archivo app.js
-        window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
-        window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
-
-        // 2. Datos compartidos desde el servidor
-        window.userBetsFromServer = {{ user_bets_json | safe if user_bets_json else '[]' }};
-        window.fixedUsername = "{{ user.username if user else 'Invitado' }}";
-
-        // 3. CAPTURA DEL EVENTO PARA TU BOTÓN VERDE
-        let selectorPrompt = null;
-
-        // Conectamos tu botón verde directamente al evento de Chrome
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnDownload = document.getElementById('btn-download');
-            if (btnDownload) {
-                btnDownload.addEventListener('click', async () => {
-                    if (selectorPrompt) {
-                        // Despierta la ventana de instalación de Chrome
-                        selectorPrompt.prompt();
-                        const { outcome } = await selectorPrompt.userChoice;
-                        console.log(`El usuario respondió a la instalación: ${outcome}`);
-                        selectorPrompt = null;
-                    } else {
-                        // Si Chrome guardó el evento por seguridad, le avisamos dónde dar clic
-                        alert("¡Tu PWA está lista! Por seguridad de localhost, usa el botón 'Abrir en aplicación' que aparece arriba en tu barra de direcciones.");
-                    }
-                });
-            }
-        });
-    </script>
-
+    });
+</script>
     <!-- Forzamos la versión 5 para que el navegador limpie cualquier residuo viejo -->
     <script defer src="{{ url_for('static', path='js/app.js') }}?v=5"></script>
 
